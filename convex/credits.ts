@@ -41,6 +41,8 @@ export const addCredits = internalMutation({
       amountUsd: args.amountUsd, provider: args.provider ?? "dodo", reference: args.reference, at: Date.now(),
     });
   },
+});
+
 // Admin: Grant credits to a user directly
 export const grantCredits = mutation({
   args: { credits: v.number() },
