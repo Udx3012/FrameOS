@@ -4,6 +4,17 @@
 // to produce an mp4 -> upload it to GCS bucket + mint a V4 signed URL
 // -> completeJob with that URL. On any failure, failJob so the dashboard stops spinning.
 //
+import { createServer } from 'http';
+
+// Bind HTTP server so Render health checks pass
+const PORT = process.env.PORT || 8080;
+createServer((_req, res) => {
+  res.writeHead(200, { 'Content-Type': 'text/plain' });
+  res.end('FrameOS Worker Live\n');
+}).listen(PORT, () => {
+  console.log(`[webPoller] HTTP healthcheck listening on port ${PORT}`);
+});
+
 import 'dotenv/config';
 import { execFile } from 'node:child_process';
 import { promisify } from 'node:util';

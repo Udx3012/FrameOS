@@ -18,6 +18,17 @@ import { createReely } from '../app.js';
 import { pickMoments } from '../moments.js';
 import type { Incoming } from './index.js';
 
+import { createServer } from 'http';
+
+// Bind HTTP server so Render health checks pass
+const PORT = process.env.PORT || 8080;
+createServer((_req, res) => {
+  res.writeHead(200, { 'Content-Type': 'text/plain' });
+  res.end('FrameOS Gateway Live\n');
+}).listen(PORT, () => {
+  console.log(`[gateway] HTTP healthcheck listening on port ${PORT}`);
+});
+
 const run = promisify(execFile);
 const reely = createReely({ freeDailyLimit: Number(process.env.FREE_DAILY_LIMIT ?? 3) });
 
