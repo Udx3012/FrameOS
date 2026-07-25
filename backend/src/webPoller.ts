@@ -136,6 +136,12 @@ const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
 
 async function main(): Promise<void> {
   console.log(`webPoller up — polling ${CONVEX_URL} every ${POLL_MS}ms, bucket gs://${GCS_BUCKET}`);
+  
+  // Also start Telegram bot if TELEGRAM_BOT_TOKEN is set
+  if (process.env.TELEGRAM_BOT_TOKEN) {
+    import('./gateway/run.js').catch((e) => console.error('[gateway] startup error:', e));
+  }
+
   let running = true;
   const stop = () => {
     running = false;
