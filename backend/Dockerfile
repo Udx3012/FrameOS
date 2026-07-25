@@ -16,5 +16,5 @@ ENV NODE_ENV=production
 ENV PORT=8080
 EXPOSE 8080
 
-# The Telegram gateway (long-polling). See docs/DEPLOY-GCP.md for the Cloud Run HTTP note.
-CMD ["node", "--import", "tsx", "src/gateway/run.ts"]
+# Run web poller (processes web dashboard jobs) alongside gateway
+CMD ["node", "--import", "tsx", "src/webPoller.ts"]
