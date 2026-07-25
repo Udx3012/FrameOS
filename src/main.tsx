@@ -41,19 +41,54 @@ const routes = (
   </BrowserRouter>
 )
 
+import { Component, type ReactNode } from 'react'
+
+class ErrorBoundary extends Component<{ children: ReactNode }, { hasError: boolean; error?: Error }> {
+  constructor(props: { children: ReactNode }) {
+    super(props);
+    this.state = { hasError: false };
+  }
+  static getDerivedStateFromError(error: Error) {
+    return { hasError: true, error };
+  }
+  componentDidCatch(error: Error, info: any) {
+    console.error("Uncaught runtime error:", error, info);
+  }
+  render() {
+    if (this.state.hasError) {
+      return (
+        <div className="min-h-screen bg-warmBg flex flex-col items-center justify-center p-6 text-center text-charcoal">
+          <h2 className="font-display text-2xl font-bold">Something went wrong</h2>
+          <p className="font-mono text-xs text-secondaryText mt-2 max-w-md">{this.state.error?.message || "An unexpected error occurred."}</p>
+          <button onClick={() => window.location.assign("/create")} className="mt-6 rounded-xl bg-charcoal px-5 py-2.5 text-sm font-semibold text-white hover:bg-electricBlue transition-colors">
+            Reload Dashboard
+          </button>
+        </div>
+      );
+    }
+    return this.props.children;
+  }
+}
+
 // Clerk (Google sign-in) activates when the publishable key is set; Convex is always provided.
 function Root() {
   if (authEnabled && pk) {
     return (
-      <ClerkProvider publishableKey={pk} afterSignOutUrl="/"
-        signInForceRedirectUrl="/create" signUpForceRedirectUrl="/create">
-        <ConvexProviderWithClerk client={convex} useAuth={useAuth}>
-          {routes}
-        </ConvexProviderWithClerk>
-      </ClerkProvider>
+      <ErrorBoundary>
+        <ClerkProvider publishableKey={pk} afterSignOutUrl="/"
+          signInForceRedirectUrl="/create" signUpForceRedirectUrl="/create">
+          <ConvexProviderWithClerk client={convex} useAuth={useAuth}>
+            {routes}
+          </ConvexProviderWithClerk>
+        </ClerkProvider>
+      </ErrorBoundary>
     )
   }
-  return <ConvexProvider client={convex}>{routes}</ConvexProvider>
+  return (
+    <ErrorBoundary>
+      <ConvexProvider client={convex}>{routes}</ConvexProvider>
+    </ErrorBoundary>
+  )
 }
 
 createRoot(document.getElementById('root')!).render(
