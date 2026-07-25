@@ -32,6 +32,8 @@ createServer((_req, res) => {
 const run = promisify(execFile);
 const reely = createReely({ freeDailyLimit: Number(process.env.FREE_DAILY_LIMIT ?? 3) });
 
+const SITE_URL = process.env.VITE_SITE_URL ?? 'https://frameos-uk.vercel.app';
+
 // Onboarding mirrors the dashboard's three modes (Generate / Edit / Clip).
 const WELCOME = [
   'FrameOS — your video editor, in chat. 🎬',
@@ -49,10 +51,10 @@ const WELCOME = [
   '     (or just paste the link — I\'ll pick the best moments)',
   '',
   'Vertical by default. Add "square" or "landscape" to any request.',
-  'Prefer a screen? Full studio at frameos.app',
+  `Prefer a screen? Full studio at ${SITE_URL}`,
 ].join('\n');
 
-const FOOTER = 'Made with FrameOS · frameos.app';
+const FOOTER = `Made with FrameOS · ${SITE_URL}`;
 
 async function main() {
   const token = process.env.TELEGRAM_BOT_TOKEN;
