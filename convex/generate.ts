@@ -23,11 +23,21 @@ export const requestGeneration = mutation({
     const id = await ctx.auth.getUserIdentity();
     if (!id) throw new ConvexError({ code: "UNAUTHENTICATED" });
 
-    const user = await ctx.db
+    let user = await ctx.db
       .query("users")
       .withIndex("by_token", (q: any) => q.eq("tokenIdentifier", id.subject))
       .unique();
-    if (!user) throw new ConvexError({ code: "NO_USER" });
+    if (!user) {
+      const email = (id.email ?? "").trim().toLowerCase();
+      const userId = await ctx.db.insert("users", {
+        tokenIdentifier: id.subject,
+        email: email || undefined,
+        name: id.name,
+        credits: 0,
+        freeUsed: 0,
+      });
+      user = await ctx.db.get(userId);
+    }
 
     // Inlined credit spend (mirrors convex/credits.ts consumeGeneration).
     if (user.freeUsed < FREE_LIMIT) {

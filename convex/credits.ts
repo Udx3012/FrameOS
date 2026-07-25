@@ -49,8 +49,20 @@ export const grantCredits = mutation({
   handler: async (ctx: any) => {
     const id = await ctx.auth.getUserIdentity();
     if (!id) throw new ConvexError({ code: "UNAUTHENTICATED" });
-    const user = await ctx.db.query("users").withIndex("by_token", (q: any) => q.eq("tokenIdentifier", id.subject)).unique();
-    if (!user) throw new ConvexError({ code: "NO_USER" });
+    let user = await ctx.db.query("users").withIndex("by_token", (q: any) => q.eq("tokenIdentifier", id.subject)).unique();
+    if (!user) {
+      const email = (id.email ?? "").trim().toLowerCase();
+      const userId = await ctx.db.insert("users", {
+        tokenIdentifier: id.subject,
+        email: email || undefined,
+        name: id.name,
+        credits: 5,
+        freeUsed: 0,
+        claimedBonus: true,
+      });
+      user = await ctx.db.get(userId);
+      return { credits: user.credits };
+    }
     if (user.claimedBonus) throw new ConvexError({ code: "ALREADY_CLAIMED", message: "Bonus credits already claimed for this account." });
     
     await ctx.db.patch(user._id, { 
