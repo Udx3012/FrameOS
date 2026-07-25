@@ -43,15 +43,20 @@ export const addCredits = internalMutation({
   },
 });
 
-// Admin: Grant credits to a user directly
+// Grant 5 credits bonus (usable only once per account)
 export const grantCredits = mutation({
-  args: { credits: v.number() },
-  handler: async (ctx: any, args: any) => {
+  args: {},
+  handler: async (ctx: any) => {
     const id = await ctx.auth.getUserIdentity();
     if (!id) throw new ConvexError({ code: "UNAUTHENTICATED" });
     const user = await ctx.db.query("users").withIndex("by_token", (q: any) => q.eq("tokenIdentifier", id.subject)).unique();
     if (!user) throw new ConvexError({ code: "NO_USER" });
-    await ctx.db.patch(user._id, { credits: (user.credits ?? 0) + args.credits });
-    return { credits: (user.credits ?? 0) + args.credits };
+    if (user.claimedBonus) throw new ConvexError({ code: "ALREADY_CLAIMED", message: "Bonus credits already claimed for this account." });
+    
+    await ctx.db.patch(user._id, { 
+      credits: (user.credits ?? 0) + 5,
+      claimedBonus: true
+    });
+    return { credits: (user.credits ?? 0) + 5 };
   },
 });

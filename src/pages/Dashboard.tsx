@@ -43,7 +43,7 @@ function SignInGate() {
   );
 }
 
-type Me = { credits: number; freeRemaining: number; freeLimit: number; founding: boolean; canGenerate: boolean } | null | undefined;
+type Me = { credits: number; freeRemaining: number; freeLimit: number; founding: boolean; claimedBonus: boolean; canGenerate: boolean } | null | undefined;
 type Job = { _id: string; mode: string; prompt: string; status: string; resultUrl?: string };
 
 function DashboardInner() {
@@ -98,12 +98,21 @@ function DashboardInner() {
                 Founding Creator
               </span>
             )}
-            <button 
-              onClick={() => grantCredits({ credits: 20 })}
-              className="rounded-full border border-electricBlue/30 bg-electricBlue/10 hover:bg-electricBlue hover:text-white px-3 py-1.5 font-mono text-[10px] font-bold uppercase tracking-widest text-electricBlue transition-colors"
-            >
-              + Add 20 Credits
-            </button>
+            {!me?.claimedBonus && (
+              <button 
+                onClick={async () => {
+                  try {
+                    await grantCredits({});
+                    setStatus("Claimed 5 bonus credits!");
+                  } catch (e: any) {
+                    setStatus("Bonus already claimed.");
+                  }
+                }}
+                className="rounded-full border border-acidGreen/40 bg-acidGreen/15 hover:bg-acidGreen hover:text-black px-3 py-1.5 font-mono text-[10px] font-bold uppercase tracking-widest text-charcoal transition-colors shadow-sm"
+              >
+                🎁 Claim 5 Bonus Credits
+              </button>
+            )}
             <span className="rounded-full border border-black/10 bg-white px-3 py-1.5 font-mono text-[10px] font-bold uppercase tracking-widest shadow-sm">
               {free > 0 ? `${free} free left` : `${credits} credits`}
             </span>

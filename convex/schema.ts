@@ -9,6 +9,7 @@ export default defineSchema({
     credits: v.number(),
     freeUsed: v.number(),
     founding: v.optional(v.boolean()),
+    claimedBonus: v.optional(v.boolean()),
   }).index("by_token", ["tokenIdentifier"]).index("by_email", ["email"]),
 
   generations: defineTable({

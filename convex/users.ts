@@ -14,6 +14,7 @@ export const currentUser = query({
       email: user?.email ?? id.email,
       name: user?.name ?? id.name,
       founding: !!user?.founding,
+      claimedBonus: !!user?.claimedBonus,
       credits,
       freeUsed,
       freeLimit: FREE_LIMIT,
