@@ -41,4 +41,15 @@ export const addCredits = internalMutation({
       amountUsd: args.amountUsd, provider: args.provider ?? "dodo", reference: args.reference, at: Date.now(),
     });
   },
+// Admin: Grant credits to a user directly
+export const grantCredits = mutation({
+  args: { credits: v.number() },
+  handler: async (ctx: any, args: any) => {
+    const id = await ctx.auth.getUserIdentity();
+    if (!id) throw new ConvexError({ code: "UNAUTHENTICATED" });
+    const user = await ctx.db.query("users").withIndex("by_token", (q: any) => q.eq("tokenIdentifier", id.subject)).unique();
+    if (!user) throw new ConvexError({ code: "NO_USER" });
+    await ctx.db.patch(user._id, { credits: (user.credits ?? 0) + args.credits });
+    return { credits: (user.credits ?? 0) + args.credits };
+  },
 });

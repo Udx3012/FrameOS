@@ -52,6 +52,7 @@ function DashboardInner() {
   const me = useQuery(api.users.currentUser) as Me;
   const ensureUser = useMutation(api.users.ensureUser);
   const requestGeneration = useMutation(api.generate.requestGeneration);
+  const grantCredits = useMutation(api.credits.grantCredits);
   const jobs = useQuery(api.generate.myJobs) as Job[] | undefined;
 
   const [mode, setMode] = useState<string>("generate");
@@ -97,6 +98,12 @@ function DashboardInner() {
                 Founding Creator
               </span>
             )}
+            <button 
+              onClick={() => grantCredits({ credits: 20 })}
+              className="rounded-full border border-electricBlue/30 bg-electricBlue/10 hover:bg-electricBlue hover:text-white px-3 py-1.5 font-mono text-[10px] font-bold uppercase tracking-widest text-electricBlue transition-colors"
+            >
+              + Add 20 Credits
+            </button>
             <span className="rounded-full border border-black/10 bg-white px-3 py-1.5 font-mono text-[10px] font-bold uppercase tracking-widest shadow-sm">
               {free > 0 ? `${free} free left` : `${credits} credits`}
             </span>

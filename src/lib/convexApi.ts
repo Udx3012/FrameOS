@@ -9,6 +9,7 @@ export const api = {
   credits: {
     getPacks: makeFunctionReference<"query">("credits:getPacks"),
     consumeGeneration: makeFunctionReference<"mutation">("credits:consumeGeneration"),
+    grantCredits: makeFunctionReference<"mutation">("credits:grantCredits"),
   },
   waitlist: {
     join: makeFunctionReference<"mutation">("waitlist:join"),
