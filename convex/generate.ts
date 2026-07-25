@@ -58,7 +58,7 @@ export const myJobs = query({
   args: {},
   handler: async (ctx: any) => {
     const id = await ctx.auth.getUserIdentity();
-    if (!id) throw new ConvexError({ code: "UNAUTHENTICATED" });
+    if (!id) return [];
     return await ctx.db
       .query("genJobs")
       .withIndex("by_user", (q: any) => q.eq("userId", id.subject))
