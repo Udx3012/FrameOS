@@ -18,8 +18,10 @@ import { initPostHog } from './lib/posthog'
 if ('scrollRestoration' in history) history.scrollRestoration = 'manual';
 initPostHog();
 
-const pk = import.meta.env.VITE_CLERK_PUBLISHABLE_KEY as string | undefined
-const convexUrl = (import.meta.env.VITE_CONVEX_URL as string | undefined) || 'https://placeholder.convex.cloud'
+const rawPk = import.meta.env.VITE_CLERK_PUBLISHABLE_KEY as string | undefined
+const pk = rawPk?.trim()
+const rawConvexUrl = (import.meta.env.VITE_CONVEX_URL as string | undefined) || 'https://placeholder.convex.cloud'
+const convexUrl = rawConvexUrl.trim()
 const convex = new ConvexReactClient(convexUrl)
 
 const PageFallback = () => (
