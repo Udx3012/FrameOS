@@ -114,7 +114,11 @@ function DashboardInner() {
               </button>
             )}
             <span className="rounded-full border border-black/10 bg-white px-3 py-1.5 font-mono text-[10px] font-bold uppercase tracking-widest shadow-sm">
-              {free > 0 ? `${free} free left` : `${credits} credits`}
+              {free > 0 && credits > 0
+                ? `${free} free • ${credits} credits`
+                : free > 0
+                ? `${free} free left`
+                : `${credits} credits`}
             </span>
             <Link to="/pricing" className="hidden text-sm font-semibold transition-colors hover:text-electricBlue sm:inline">Buy credits</Link>
             <UserButton afterSignOutUrl="/" />
