@@ -38,10 +38,14 @@ export const mediaCore: MediaCore = {
       case 'format': {
         const [w, h] = ASPECTS[op.aspect] ?? ASPECTS['9:16'];
         const o = out(ctx, 'format');
+        if (meta && meta.width === w && meta.height === h) {
+          await ff([...inp(input), '-c', 'copy', o], sig);
+          return { outputPath: o };
+        }
         const aCopy = meta?.hasAudio ? ['-c:a', 'copy'] : ['-an'];
         const blur = (await hasFilter('gblur')) ? 'gblur=sigma=8' : 'boxblur=8:2';
         await ff([...inp(input), '-vf',
-          formatFilter(w, h, op.mode ?? 'crop', op.focusX, blur), ...aCopy, o], sig);
+          formatFilter(w, h, op.mode ?? 'crop', op.focusX, blur), '-preset', 'ultrafast', '-c:v', 'libx264', '-pix_fmt', 'yuv420p', ...aCopy, o], sig);
         return { outputPath: o };
       }
       case 'cutaways': {
@@ -59,7 +63,7 @@ export const mediaCore: MediaCore = {
         const brollInputs = usable.flatMap((c) => ['-i', c.path]);
         const aMap = meta?.hasAudio ? ['-map', '0:a', '-c:a', 'copy'] : ['-an'];
         await ff([...inp(input), ...brollInputs, '-filter_complex', graph,
-          '-map', '[vout]', ...aMap, o], sig);
+          '-map', '[vout]', '-preset', 'ultrafast', '-c:v', 'libx264', '-pix_fmt', 'yuv420p', ...aMap, o], sig);
         return { outputPath: o };
       }
       case 'speed': {
@@ -68,7 +72,7 @@ export const mediaCore: MediaCore = {
         const pts = (1 / f).toFixed(4);
         const atempo = f > 2 ? `atempo=2.0,atempo=${(f / 2).toFixed(4)}` : `atempo=${f.toFixed(4)}`;
         const filter = meta?.hasAudio ? ['-vf', `setpts=${pts}*PTS`, '-af', atempo] : ['-vf', `setpts=${pts}*PTS`];
-        await ff([...inp(input), ...filter, o], sig);
+        await ff([...inp(input), ...filter, '-preset', 'ultrafast', '-c:v', 'libx264', '-pix_fmt', 'yuv420p', o], sig);
         return { outputPath: o };
       }
       case 'convert': {
@@ -89,7 +93,7 @@ export const mediaCore: MediaCore = {
           const o = out(ctx, 'convert', 'webp'); await ff([...inp(input), '-q:v', '75', o], sig); return { outputPath: o };
         }
         // even-dimension scale guards against libx264 rejecting odd source dims
-        const o = out(ctx, 'convert'); await ff([...inp(input), '-vf', 'scale=trunc(iw/2)*2:trunc(ih/2)*2', '-c:v', 'libx264', '-pix_fmt', 'yuv420p', '-c:a', 'aac', o], sig); return { outputPath: o };
+        const o = out(ctx, 'convert'); await ff([...inp(input), '-vf', 'scale=trunc(iw/2)*2:trunc(ih/2)*2', '-preset', 'ultrafast', '-c:v', 'libx264', '-pix_fmt', 'yuv420p', '-c:a', 'aac', o], sig); return { outputPath: o };
       }
       case 'watermark': {
         const o = out(ctx, 'watermark');
@@ -99,9 +103,9 @@ export const mediaCore: MediaCore = {
           const pos = wmPos(op.position);
           await ff([...inp(input), '-vf',
             `drawtext=fontfile=${fontFile()}:text='${op.text.replace(/[':\\]/g, '')}':fontcolor=white@0.85:fontsize=28:${pos}`,
-            ...aCopy, o], sig);
+            '-preset', 'ultrafast', '-c:v', 'libx264', '-pix_fmt', 'yuv420p', ...aCopy, o], sig);
         } else {
-          await ff([...inp(input), '-vf', 'drawbox=x=0:y=ih-46:w=iw:h=46:color=black@0.45:t=fill', ...aCopy, o], sig);
+          await ff([...inp(input), '-vf', 'drawbox=x=0:y=ih-46:w=iw:h=46:color=black@0.45:t=fill', '-preset', 'ultrafast', '-c:v', 'libx264', '-pix_fmt', 'yuv420p', ...aCopy, o], sig);
         }
         return { outputPath: o };
       }
@@ -113,10 +117,10 @@ export const mediaCore: MediaCore = {
           const ass = join(ctx.tmpDir, `cap-${Math.random().toString(36).slice(2)}.ass`);
           const cues = op.cues?.length ? op.cues : [{ start: 0, end: 5, text: op.text! }];
           await writeFile(ass, toAss(cues, op.style));
-          await ff([...inp(input), '-vf', `subtitles=${ffEscapePath(ass)}`, ...aCopy, o], sig);
+          await ff([...inp(input), '-vf', `subtitles=${ffEscapePath(ass)}`, '-preset', 'ultrafast', '-c:v', 'libx264', '-pix_fmt', 'yuv420p', ...aCopy, o], sig);
         } else {
           // limited build: caption bar placeholder so the pipeline still yields valid video
-          await ff([...inp(input), '-vf', 'drawbox=x=0:y=ih-140:w=iw:h=140:color=black@0.35:t=fill', ...aCopy, o], sig);
+          await ff([...inp(input), '-vf', 'drawbox=x=0:y=ih-140:w=iw:h=140:color=black@0.35:t=fill', '-preset', 'ultrafast', '-c:v', 'libx264', '-pix_fmt', 'yuv420p', ...aCopy, o], sig);
         }
         return { outputPath: o };
       }
