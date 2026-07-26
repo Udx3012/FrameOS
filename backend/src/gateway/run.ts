@@ -20,14 +20,24 @@ import type { Incoming } from './index.js';
 
 import { createServer } from 'http';
 
-// Bind HTTP server so Render health checks pass
-const PORT = process.env.PORT || 8080;
-createServer((_req, res) => {
-  res.writeHead(200, { 'Content-Type': 'text/plain' });
-  res.end('FrameOS Gateway Live\n');
-}).listen(PORT, () => {
-  console.log(`[gateway] HTTP healthcheck listening on port ${PORT}`);
-});
+// Bind HTTP server so Render health checks pass (when run standalone)
+if (!process.env.SKIP_GATEWAY_HTTP) {
+  const PORT = process.env.PORT || 8080;
+  const server = createServer((_req, res) => {
+    res.writeHead(200, { 'Content-Type': 'text/plain' });
+    res.end('FrameOS Gateway Live\n');
+  });
+  server.on('error', (err: any) => {
+    if (err.code === 'EADDRINUSE') {
+      console.log(`[gateway] HTTP port ${PORT} already bound, skipping standalone HTTP listener`);
+    } else {
+      console.error('[gateway] HTTP server error:', err);
+    }
+  });
+  server.listen(PORT, () => {
+    console.log(`[gateway] HTTP healthcheck listening on port ${PORT}`);
+  });
+}
 
 const run = promisify(execFile);
 const reely = createReely({ freeDailyLimit: Number(process.env.FREE_DAILY_LIMIT ?? 3) });
@@ -161,17 +171,22 @@ async function autoMoments(url: string, userId: string, ctx: any) {
 }
 
 async function dispatch(inc: Incoming, ctx: any, pending: Map<string, Incoming>) {
-  await ctx.sendChatAction('upload_video').catch(() => {});
-  const replies = await reely.handle(inc);
-  for (const r of replies) {
-    if (r.kind === 'text') {
-      await ctx.reply(r.text);
-      if (/rights|confirm/i.test(r.text)) pending.set(inc.userId, inc);
-    } else {
-      const caption = [r.caption, FOOTER].filter(Boolean).join('\n\n');
-      await ctx.replyWithVideo({ source: r.filePath }, { caption });
-      await shareToGcs(r.filePath, ctx).catch(() => {});   // best-effort; never fails the reply
+  try {
+    await ctx.sendChatAction('upload_video').catch(() => {});
+    const replies = await reely.handle(inc);
+    for (const r of replies) {
+      if (r.kind === 'text') {
+        await ctx.reply(r.text);
+        if (/rights|confirm/i.test(r.text)) pending.set(inc.userId, inc);
+      } else {
+        const caption = [r.caption, FOOTER].filter(Boolean).join('\n\n');
+        await ctx.replyWithVideo({ source: r.filePath }, { caption });
+        await shareToGcs(r.filePath, ctx).catch(() => {});   // best-effort; never fails the reply
+      }
     }
+  } catch (err: any) {
+    console.error('[gateway] Error processing message:', err);
+    await ctx.reply(`Sorry, something went wrong processing your request: ${err?.message ?? String(err)}`).catch(() => {});
   }
 }
 

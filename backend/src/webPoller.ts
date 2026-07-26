@@ -139,6 +139,7 @@ async function main(): Promise<void> {
   
   // Also start Telegram bot if TELEGRAM_BOT_TOKEN is set
   if (process.env.TELEGRAM_BOT_TOKEN) {
+    process.env.SKIP_GATEWAY_HTTP = '1';
     import('./gateway/run.js').catch((e) => console.error('[gateway] startup error:', e));
   }
 

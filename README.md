@@ -5,7 +5,7 @@
 ### Your video editor lives in chat.
 
 Turn a prompt, a raw clip, or a YouTube link into a captioned vertical short, just by asking.
-No CapCut, no timeline to timeline hassle, no converter sites.
+No CapCut, no timeline hassle, no converter sites.
 
 [![live](https://img.shields.io/badge/live-frameos.app-2563EB)](https://frameos.app)
 [![telegram](https://img.shields.io/badge/try%20it-%40FrameOSBot-229ED9?logo=telegram&logoColor=white)](https://t.me/FrameOSBot)
