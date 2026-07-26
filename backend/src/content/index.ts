@@ -12,21 +12,34 @@ function cleanTopic(t: string): string {
 
 async function llm(prompt: string): Promise<string | null> {
   const key = process.env.LLM_API_KEY;
-  if (!key) return null;
+  if (!key) {
+    console.error('[content] LLM_API_KEY is not set');
+    return null;
+  }
   const base = process.env.LLM_BASE_URL ?? 'https://api.openai.com/v1';
-  const defaultModel = base.includes('generativelanguage.googleapis.com') ? 'gemini-2.5-flash' : 'gpt-4o-mini';
-  const res = await fetch(`${base}/chat/completions`, {
-    method: 'POST',
-    headers: { authorization: `Bearer ${key}`, 'content-type': 'application/json' },
-    body: JSON.stringify({
-      model: process.env.LLM_MODEL ?? defaultModel,
-      messages: [{ role: 'system', content: SYSTEM }, { role: 'user', content: prompt }],
-      temperature: 0.8,
-    }),
-  });
-  if (!res.ok) return null;
-  const j = await res.json();
-  return j.choices?.[0]?.message?.content ?? null;
+  const defaultModel = base.includes('generativelanguage.googleapis.com') ? 'gemini-2.0-flash' : 'gpt-4o-mini';
+  const model = process.env.LLM_MODEL ?? defaultModel;
+  try {
+    const res = await fetch(`${base}/chat/completions`, {
+      method: 'POST',
+      headers: { authorization: `Bearer ${key}`, 'content-type': 'application/json' },
+      body: JSON.stringify({
+        model,
+        messages: [{ role: 'system', content: SYSTEM }, { role: 'user', content: prompt }],
+        temperature: 0.8,
+      }),
+    });
+    if (!res.ok) {
+      const errText = await res.text().catch(() => '');
+      console.error(`[content] LLM API error ${res.status} (model: ${model}):`, errText);
+      return null;
+    }
+    const j = await res.json();
+    return j.choices?.[0]?.message?.content ?? null;
+  } catch (e: any) {
+    console.error('[content] LLM fetch exception:', e?.message ?? e);
+    return null;
+  }
 }
 
 function safeJson<T>(s: string | null, fallback: T): T {
@@ -40,9 +53,9 @@ export const content: Content = {
     const grounding = facts.length ? `\nUse these current facts (cite-worthy, keep them accurate):\n- ${facts.join('\n- ')}` : '';
     const out = await llm(`Give 3 viral short-form angles for the topic: "${topic}".${grounding}\nJSON array of {hook, premise, whyViral}.`);
     const fallback: Angle[] = [
-      { hook: `The real reason ${topic} is taking over`, premise: `3 key reasons why ${topic} is winning`, whyViral: 'contrarian + specific' },
-      { hook: `${topic}, explained in 15 seconds`, premise: `fast facts with a twist ending`, whyViral: 'saves + shares as a quick explainer' },
-      { hook: `What nobody tells you about ${topic}`, premise: `one surprising insight + a takeaway`, whyViral: 'curiosity gap' },
+      { hook: `Why ${topic} is changing everything`, premise: `3 surprising facts about ${topic}`, whyViral: 'contrarian + specific' },
+      { hook: `The truth about ${topic}`, premise: `explaining ${topic} in under 20 seconds`, whyViral: 'curiosity gap' },
+      { hook: `Everything you need to know about ${topic}`, premise: `one key insight about ${topic}`, whyViral: 'informative' },
     ];
     const parsed = safeJson<Angle[]>(out, fallback);
     return Array.isArray(parsed) && parsed.length ? parsed.slice(0, 3) : fallback;
@@ -53,7 +66,7 @@ export const content: Content = {
     const out = await llm(`Write a 45-55 word voiceover script for this angle. Hook first line.${grounding} JSON {script, captions}. Angle: ${JSON.stringify(angle)}`);
     const fb = (() => {
       const fact = facts[0] ? ` ${facts[0]}` : '';
-      const script = `${angle.hook}.${fact} Here is what actually matters and why most people miss it. Remember this next time.`;
+      const script = `${angle.hook}.${fact} Here is what you need to know: it completely shifts the game and impacts everyone. Share this video with a friend!`;
       return { script, captions: script };
     })();
     const parsed = safeJson<{ script: string; captions: string }>(out, fb);
