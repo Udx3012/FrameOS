@@ -9,7 +9,7 @@ export type Op =
       mode?: 'crop' | 'fit';          // crop = fill frame (may cut edges), fit = blur-pad (keeps everything)
       focusX?: number }               // 0-1 horizontal subject center for crop (default 0.5 = center)
   | { op: 'speed';     factor: number }
-  | { op: 'convert';   to: 'mp4' | 'mp3' | 'gif' | 'webm' }
+  | { op: 'convert';   to: 'mp4' | 'mp3' | 'gif' | 'webm' | 'webp' | 'jpg' | 'jpeg' | 'png' }
   | { op: 'watermark'; text: string; show: boolean; position?: 'br' | 'bl' | 'tr' | 'tl' }
   | { op: 'sticker' }
   | { op: 'thumbnail'; at: string }

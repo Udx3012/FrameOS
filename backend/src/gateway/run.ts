@@ -121,13 +121,6 @@ async function main() {
     // Nothing actionable yet (e.g. a plain "hi") — point them at how it works.
     if (!attachmentPath && !text.trim()) return ctx.reply(WELCOME, { disable_web_page_preview: true });
 
-    // Acknowledge the render up front, except when a YouTube clip still needs the ownership check.
-    const needsOwnership = !!url && /\d{1,2}[:.]\d{2}\s*(?:to|-|–|—|until)/i.test(text);
-    if (!needsOwnership) {
-      await ctx.reply(attachmentPath
-        ? 'On it — editing your clip. This takes about a minute…'
-        : 'On it — generating your reel. This takes about a minute…').catch(() => {});
-    }
     return dispatch({ userId, platform: 'telegram', text, attachmentPath, isPro: false }, ctx, pending);
   });
 
@@ -173,7 +166,7 @@ async function autoMoments(url: string, userId: string, ctx: any) {
 async function dispatch(inc: Incoming, ctx: any, pending: Map<string, Incoming>) {
   try {
     await ctx.sendChatAction('upload_video').catch(() => {});
-    const replies = await reely.handle(inc);
+    const replies = await reely.handle(inc, { onStatus: (msg) => ctx.reply(msg).catch(() => {}) });
     for (const r of replies) {
       if (r.kind === 'text') {
         await ctx.reply(r.text);

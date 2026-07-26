@@ -55,6 +55,7 @@ export interface GatewayDeps {
   };
   freeDailyLimit?: number;         // default 3
   autoCleanup?: boolean;           // delete the artifact after building the reply (default true)
+  onStatus?: (status: string) => Promise<unknown> | void;
 }
 
 function summarize(job: JobSpec): string {
@@ -94,6 +95,12 @@ export async function handleMessage(inc: Incoming, deps: GatewayDeps): Promise<R
   if (job.mode === 'clip' && !inc.confirmedOwnership) {
     return [{ kind: 'text', text: `i'll clip ${job.source.url}. confirm you own or have the rights to use this clip — reply "yes" to proceed.` }];
   }
+
+  await deps.onStatus?.(
+    inc.attachmentPath
+      ? 'On it — editing your clip. This takes about a minute…'
+      : 'On it — generating your reel. This takes about a minute…'
+  );
 
   const result = await deps.enqueue(job);
   if (!result.ok || !result.outputPath) {

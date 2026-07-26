@@ -45,7 +45,7 @@ function parseOps(msg: string, mode: Mode, isPro: boolean): Op[] {
   else if (toWebp) ops.push({ op: 'convert', to: 'webp' });
   else if (toJpg) ops.push({ op: 'convert', to: 'jpg' });
   else if (toPng) ops.push({ op: 'convert', to: 'png' });
-  else if (compressIntent) ops.push({ op: 'convert' });
+  else if (compressIntent) ops.push({ op: 'convert', to: 'mp4' });
 
   if (speedIntent) {
     const f = m.match(/(\d(?:\.\d)?)x/);

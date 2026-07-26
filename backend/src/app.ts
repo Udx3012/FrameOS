@@ -67,7 +67,7 @@ async function prepare(job: JobSpec, ctx: JobCtx): Promise<{ inputPath?: string;
   return { inputPath: path, ops };
 }
 
-export function createFrameOS(opts: { runOp?: RunOp; usePrepare?: boolean; executor?: ExecutorOptions; freeDailyLimit?: number } = {}) {
+export function createFrameOS(opts: { runOp?: RunOp; usePrepare?: boolean; executor?: ExecutorOptions; freeDailyLimit?: number; onStatus?: (msg: string) => Promise<unknown> | void } = {}) {
   const executor = createExecutor(
     { runOp: opts.runOp ?? mediaCore.runOp, prepare: opts.usePrepare === false ? undefined : prepare },
     opts.executor ?? {},
@@ -80,9 +80,10 @@ export function createFrameOS(opts: { runOp?: RunOp; usePrepare?: boolean; execu
       freeUsedToday: (u) => data.freeUsedToday(u),
     },
     freeDailyLimit: opts.freeDailyLimit,
+    onStatus: opts.onStatus,
   };
   return {
-    handle: (inc: Incoming): Promise<Reply[]> => handleMessage(inc, deps),
+    handle: (inc: Incoming, extraDeps?: Partial<GatewayDeps>): Promise<Reply[]> => handleMessage(inc, { ...deps, ...extraDeps }),
     stats: executor.stats,
   };
 }
