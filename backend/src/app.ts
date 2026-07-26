@@ -23,12 +23,13 @@ async function prepare(job: JobSpec, ctx: JobCtx): Promise<{ inputPath?: string;
     const angles = await content.brainstorm(topic, research.facts);
     const { script } = await content.script(angles[0], research.facts);
     const voice = await mediaCore.runOp('', { op: 'voiceover', voiceId: '', script }, ctx);
-    const broll = await mediaCore.runOp('', { op: 'broll', keywords: [topic] }, ctx);
+    const voiceDur = await ffprobe(voice.outputPath).then((p) => p.durationSec).catch(() => 0);
+    const durationSec = Math.max(3, Math.ceil(voiceDur || 10));
+    const broll = await mediaCore.runOp('', { op: 'broll', keywords: [topic], durationSec }, ctx);
     const base = join(ctx.tmpDir, `gen-${Math.random().toString(36).slice(2)}.mp4`);
     await ff(['-i', broll.outputPath, '-i', voice.outputPath, '-map', '0:v', '-map', '1:a',
       '-shortest', '-c:v', 'copy', '-c:a', 'aac', base], ctx.signal);
     // pace the script words across the real voiceover duration so cues track the audio
-    const voiceDur = await ffprobe(voice.outputPath).then((p) => p.durationSec).catch(() => 0);
     const w = script.trim().split(/\s+/);
     const per = voiceDur > 0 ? voiceDur / w.length : 0.4;
     const cues = wordsToCues(w.map((text, i) => ({ text, start: i * per, end: (i + 1) * per })), 3);

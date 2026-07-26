@@ -179,7 +179,7 @@ export const mediaCore: MediaCore = {
         return { outputPath: o };
       }
       case 'voiceover': {
-        // voice chain: ElevenLabs -> OpenAI TTS -> local (Windows SAPI5 / macOS say / Linux espeak) -> silent audio fallback.
+        // voice chain: ElevenLabs -> OpenAI TTS -> Google TTS -> local (Windows SAPI5 / macOS say / Linux espeak) -> silent audio fallback.
         // Each rung survives the next one failing.
         const o = out(ctx, 'voice', 'm4a');
         const raw = join(ctx.tmpDir, `tts-${Math.random().toString(36).slice(2)}`);
@@ -189,6 +189,9 @@ export const mediaCore: MediaCore = {
         }
         if (!src && process.env.LLM_API_KEY && !process.env.LLM_BASE_URL?.includes('generativelanguage.googleapis.com')) {
           src = await openaiVoice(op.script, `${raw}.oa.mp3`).then(() => `${raw}.oa.mp3`).catch(() => null);
+        }
+        if (!src) {
+          src = await googleTts(op.script, `${raw}.g.mp3`).then(() => `${raw}.g.mp3`).catch(() => null);
         }
         if (!src) {
           await sayTTS(op.script, `${raw}.aiff`).catch(() => null);
@@ -283,6 +286,32 @@ async function openaiVoice(script: string, outPath: string): Promise<void> {
   });
   if (!res.ok) throw new Error(`openai tts ${res.status}`);
   await writeFile(outPath, Buffer.from(await res.arrayBuffer()));
+}
+
+async function googleTts(script: string, outPath: string): Promise<void> {
+  const clean = script.replace(/[\r\n]+/g, ' ').trim();
+  const words = clean.split(/\s+/);
+  const chunks: string[] = [];
+  let curr = '';
+  for (const w of words) {
+    if ((curr + ' ' + w).length > 150) {
+      chunks.push(curr);
+      curr = w;
+    } else {
+      curr = curr ? `${curr} ${w}` : w;
+    }
+  }
+  if (curr) chunks.push(curr);
+
+  const buffers: Buffer[] = [];
+  for (const chunk of chunks) {
+    const url = `https://translate.google.com/translate_tts?ie=UTF-8&q=${encodeURIComponent(chunk)}&tl=en&client=tw-ob`;
+    const res = await fetch(url, { headers: { 'user-agent': 'Mozilla/5.0' }, signal: AbortSignal.timeout(10_000) });
+    if (!res.ok) throw new Error(`google tts ${res.status}`);
+    buffers.push(Buffer.from(await res.arrayBuffer()));
+  }
+  if (!buffers.length) throw new Error('empty google tts');
+  await writeFile(outPath, Buffer.concat(buffers));
 }
 
 export { ffprobe };
