@@ -137,8 +137,8 @@ async function main() {
     );
   } catch (e) { console.error('setup (commands/description) failed:', (e as Error).message); }
 
-  bot.launch()
-    .then(() => console.log('FrameOS gateway up (telegram)'))
+  bot.launch({ dropPendingUpdates: true })
+    .then(() => console.log('FrameOS gateway up (telegram - cleared pending backlog)'))
     .catch((e: any) => console.error('bot launch error:', e?.message ?? e));
   process.once('SIGINT', () => bot.stop('SIGINT'));
   process.once('SIGTERM', () => bot.stop('SIGTERM'));
