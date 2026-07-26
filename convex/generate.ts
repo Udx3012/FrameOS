@@ -27,6 +27,13 @@ export const requestGeneration = mutation({
       .query("users")
       .withIndex("by_token", (q: any) => q.eq("tokenIdentifier", id.subject))
       .unique();
+    if (!user && id.email) {
+      const email = (id.email ?? "").trim().toLowerCase();
+      user = await ctx.db.query("users").withIndex("by_email", (q: any) => q.eq("email", email)).unique();
+      if (user && user.tokenIdentifier !== id.subject) {
+        await ctx.db.patch(user._id, { tokenIdentifier: id.subject });
+      }
+    }
     if (!user) {
       const email = (id.email ?? "").trim().toLowerCase();
       const userId = await ctx.db.insert("users", {

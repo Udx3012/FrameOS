@@ -7,7 +7,11 @@ export const currentUser = query({
   handler: async (ctx: any) => {
     const id = await ctx.auth.getUserIdentity();
     if (!id) return null;
-    const user = await ctx.db.query("users").withIndex("by_token", (q: any) => q.eq("tokenIdentifier", id.subject)).unique();
+    let user = await ctx.db.query("users").withIndex("by_token", (q: any) => q.eq("tokenIdentifier", id.subject)).unique();
+    if (!user && id.email) {
+      const email = (id.email ?? "").trim().toLowerCase();
+      user = await ctx.db.query("users").withIndex("by_email", (q: any) => q.eq("email", email)).unique();
+    }
     const freeUsed = user?.freeUsed ?? 0;
     const credits = user?.credits ?? 0;
     return {
